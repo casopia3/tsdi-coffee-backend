@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: coffeehouse-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: coffeehouse-db
+          property: connectionString
+      - key: FRONTEND_URL
+        sync: false        # set manually in Render dashboard (your Vercel URL)
+      - key: ADMIN_PASSWORD
+        generateValue: true  # Render generates a random secret
+      - key: CHAPA_SECRET_KEY
+        sync: false        # set manually after getting your Chapa API key
+
+databases:
+  - name: coffeehouse-db
+    plan: free
+    databaseName: coffeehouse_db
