@@ -76,3 +76,47 @@ const toggleAvailability = async (req, res) => {
 };
 
 module.exports = { getMenu, getMenuItem, toggleAvailability };
+
+// POST /api/menu (admin)
+const createMenuItem = async (req, res) => {
+  const { category_id, name, description, price, image_emoji } = req.body;
+  if (!name || !price) return res.status(400).json({ success: false, message: 'Name and price required' });
+  try {
+    const result = await pool.query(
+      `INSERT INTO menu_items (category_id, name, description, price, image_emoji)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [category_id, name, description, price, image_emoji || '☕']
+    );
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// PUT /api/menu/:id (admin)
+const updateMenuItem = async (req, res) => {
+  const { name, description, price, image_emoji, category_id } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE menu_items SET name=$1, description=$2, price=$3, image_emoji=$4, category_id=$5
+       WHERE id=$6 RETURNING *`,
+      [name, description, price, image_emoji, category_id, req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Item not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// DELETE /api/menu/:id (admin)
+const deleteMenuItem = async (req, res) => {
+  try {
+    await pool.query('DELETE FROM menu_items WHERE id=$1', [req.params.id]);
+    res.json({ success: true, message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = { getMenu, getMenuItem, toggleAvailability, createMenuItem, updateMenuItem, deleteMenuItem };

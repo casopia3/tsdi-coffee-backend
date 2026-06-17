@@ -179,3 +179,26 @@ async function getOrderById(id) {
 }
 
 module.exports = { createOrder, getOrder, updateOrderStatus, getActiveOrders };
+
+// GET /api/orders/history (admin - all orders including served)
+const getOrderHistory = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        o.id, o.table_number, o.status, o.total, o.created_at,
+        json_agg(json_build_object('name',oi.name,'quantity',oi.quantity,'price',oi.price) ORDER BY oi.id) AS items,
+        json_build_object('method', p.method, 'status', p.status) AS payment
+      FROM orders o
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      LEFT JOIN payments p ON p.order_id = o.id
+      GROUP BY o.id, p.method, p.status
+      ORDER BY o.created_at DESC
+      LIMIT 200;
+    `);
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = { createOrder, getOrder, updateOrderStatus, getActiveOrders, getOrderHistory };
