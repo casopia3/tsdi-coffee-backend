@@ -19,7 +19,7 @@ const getMenu = async (req, res) => {
         ) AS items
       FROM categories c
       JOIN menu_items m ON m.category_id = c.id
-      WHERE c.is_active = true AND m.is_available = true
+      WHERE c.is_active = true
       GROUP BY c.id, c.name, c.sort_order
       ORDER BY c.sort_order;
     `);
