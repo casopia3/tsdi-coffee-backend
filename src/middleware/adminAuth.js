@@ -1,7 +1,3 @@
-// Simple admin authentication middleware
-// Used to protect kitchen dashboard and menu management routes
-// For production you'd replace this with proper JWT auth
-
 const adminAuth = (req, res, next) => {
   const authHeader = req.headers['authorization'];
 
@@ -10,11 +6,15 @@ const adminAuth = (req, res, next) => {
   }
 
   const token = authHeader.split(' ')[1];
+  const adminPw   = process.env.ADMIN_PASSWORD;
+  const kitchenPw = process.env.KITCHEN_PASSWORD;
 
-  if (token !== process.env.ADMIN_PASSWORD) {
-    return res.status(403).json({ success: false, message: 'Invalid admin credentials' });
+  if (token !== adminPw && token !== kitchenPw) {
+    return res.status(403).json({ success: false, message: 'Invalid credentials' });
   }
 
+  // Attach role to request so controllers can check if needed
+  req.role = token === adminPw ? 'admin' : 'kitchen';
   next();
 };
 
