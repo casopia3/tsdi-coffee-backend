@@ -1,7 +1,6 @@
 const pool = require('../db/pool');
 
 // GET /api/menu
-// Returns all available items grouped by category
 const getMenu = async (req, res) => {
   try {
     const result = await pool.query(`
@@ -10,11 +9,12 @@ const getMenu = async (req, res) => {
         c.name AS category,
         json_agg(
           json_build_object(
-            'id',          m.id,
-            'name',        m.name,
-            'description', m.description,
-            'price',       m.price,
-            'image_emoji', m.image_emoji
+            'id',           m.id,
+            'name',         m.name,
+            'description',  m.description,
+            'price',        m.price,
+            'image_emoji',  m.image_emoji,
+            'is_available', m.is_available
           ) ORDER BY m.sort_order
         ) AS items
       FROM categories c
@@ -23,7 +23,6 @@ const getMenu = async (req, res) => {
       GROUP BY c.id, c.name, c.sort_order
       ORDER BY c.sort_order;
     `);
-
     res.json({ success: true, data: result.rows });
   } catch (err) {
     console.error('getMenu error:', err.message);
@@ -34,58 +33,41 @@ const getMenu = async (req, res) => {
 // GET /api/menu/:id
 const getMenuItem = async (req, res) => {
   try {
-    const { id } = req.params;
     const result = await pool.query(
-      `SELECT m.*, c.name AS category
-       FROM menu_items m
-       JOIN categories c ON c.id = m.category_id
-       WHERE m.id = $1`,
-      [id]
+      `SELECT m.*, c.name AS category FROM menu_items m
+       JOIN categories c ON c.id = m.category_id WHERE m.id = $1`,
+      [req.params.id]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Item not found' });
-    }
-
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Item not found' });
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to load item' });
   }
 };
 
-// PATCH /api/menu/:id/availability  (admin)
+// PATCH /api/menu/:id/availability (admin)
 const toggleAvailability = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { is_available } = req.body;
-
     const result = await pool.query(
-      `UPDATE menu_items SET is_available = $1 WHERE id = $2
-       RETURNING id, name, is_available`,
-      [is_available, id]
+      `UPDATE menu_items SET is_available = $1 WHERE id = $2 RETURNING id, name, is_available`,
+      [req.body.is_available, req.params.id]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Item not found' });
-    }
-
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Item not found' });
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to update item' });
   }
 };
 
-module.exports = { getMenu, getMenuItem, toggleAvailability };
-
 // POST /api/menu (admin)
 const createMenuItem = async (req, res) => {
-  const { category_id, name, description, price, image_emoji } = req.body;
+  const { category_id, name, description, price, image_emoji, image_url } = req.body;
   if (!name || !price) return res.status(400).json({ success: false, message: 'Name and price required' });
   try {
     const result = await pool.query(
-      `INSERT INTO menu_items (category_id, name, description, price, image_emoji)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [category_id, name, description, price, image_emoji || '☕']
+      `INSERT INTO menu_items (category_id, name, description, price, image_emoji, image_url)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [category_id, name, description, price, image_emoji || '☕', image_url || null]
     );
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (err) {
@@ -95,12 +77,12 @@ const createMenuItem = async (req, res) => {
 
 // PUT /api/menu/:id (admin)
 const updateMenuItem = async (req, res) => {
-  const { name, description, price, image_emoji, category_id } = req.body;
+  const { name, description, price, image_emoji, image_url, category_id } = req.body;
   try {
     const result = await pool.query(
-      `UPDATE menu_items SET name=$1, description=$2, price=$3, image_emoji=$4, category_id=$5
-       WHERE id=$6 RETURNING *`,
-      [name, description, price, image_emoji, category_id, req.params.id]
+      `UPDATE menu_items SET name=$1, description=$2, price=$3, image_emoji=$4, category_id=$5, image_url=$6
+       WHERE id=$7 RETURNING *`,
+      [name, description, price, image_emoji, category_id, image_url || null, req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Item not found' });
     res.json({ success: true, data: result.rows[0] });
