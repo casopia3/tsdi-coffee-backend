@@ -16,13 +16,14 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 // ── CORS ──────────────────────────────────────────────────────────────────────
 app.use(cors({
   origin: [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
     'http://localhost:3000',
     'http://localhost:3001',
-    'https://tsdi-coffee-frontend.vercel.app',
     /\.vercel\.app$/,
   ],
-  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }));
 
 // ── Body parsing ──────────────────────────────────────────────────────────────
