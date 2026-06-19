@@ -29,6 +29,15 @@ app.use(cors({
 // ── Body parsing ──────────────────────────────────────────────────────────────
 app.use(express.json());
 
+// ── Disable caching on all API responses ──────────────────────────────────────
+// Prevents stale 304 responses that make "refresh" buttons appear broken
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
 // ── Health check (Render pings this to keep the service alive) ────────────────
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'Habesha Brew API', timestamp: new Date().toISOString() });
