@@ -14,6 +14,7 @@ const getMenu = async (req, res) => {
             'description',  m.description,
             'price',        m.price,
             'image_emoji',  m.image_emoji,
+            'image_url',    m.image_url,
             'is_available', m.is_available
           ) ORDER BY m.sort_order
         ) AS items
