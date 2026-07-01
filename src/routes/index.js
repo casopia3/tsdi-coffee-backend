@@ -5,6 +5,10 @@ const { getMenu, getMenuItem, toggleAvailability, createMenuItem, updateMenuItem
 const { createOrder, getOrder, updateOrderStatus, getActiveOrders, getOrderHistory } = require('../controllers/ordersController');
 const { initiatePayment, handleWebhook, getPaymentStatus } = require('../controllers/paymentsController');
 const adminAuth = require('../middleware/adminAuth');
+const authRoutes = require('./auth');
+
+// ── Auth (login + change password) ─────────────────────────────────────────────
+router.use('/auth', authRoutes);
 
 // ── Menu ──────────────────────────────────────────────────────────────────────
 router.get('/menu',                          getMenu);
